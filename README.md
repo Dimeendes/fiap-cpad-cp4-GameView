@@ -5,8 +5,18 @@
 ### Uma aplicação de review para os amantes de jogos, criada para centralizar em um único espaço a experiência de descobrir, avaliar, organizar e compartilhar opiniões sobre jogos. Diferente das plataformas tradicionais, o aplicativo busca transformar o histórico de jogos do usuário em uma experiência social e personalizada, permitindo criar listas, registrar jogos zerados ou em andamento, atribuir notas e acompanhar avaliações de amigos e da comunidade.
 
 ### O diferencial competitivo está em unir a organização pessoal de um backlog com a interação social de uma plataforma de reviews
-# 
 
+#
+## Naming rationale
+O nome **GameView** foi escolhido justamente por combinar as palavras **Game**, que representa o universo dos jogos, e **View**, 
+que representa a opinião, avaliação e perspectiva dos jogadores. Esse nome reforça a proposta do app e o intuito de 
+reunir experiências, opiniões e interações sobre inúmeros jogos em um único lugar.
+# 
+## Tom de voz
+O app utiliza um tom de voz descontraído e próximo da comunidade gamer, com uma linguagem simples e acessível.  O objetivo é atrair os amantes de jogos e tornar a experiência de avaliar, descobrir e compartilhar opiniões  mais natural e divertida, além de incentivar a interação entre os usuários e seus amigos.
+
+
+#
 ## Integrantes
 | Nome| RM |
 | ----- | ------ |
