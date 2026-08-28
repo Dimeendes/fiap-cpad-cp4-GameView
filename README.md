@@ -2,9 +2,9 @@
 
 <img width="300" height="300" alt="logo" src="https://github.com/user-attachments/assets/b1a6f0ae-832b-4ecb-86a0-ca8f87ac8adc" />
 
-### Uma aplicação de review para os amantes de jogos, criada para centralizar em um único espaço a experiência de descobrir, avaliar, organizar e compartilhar opiniões sobre jogos. Diferente das plataformas tradicionais, o aplicativo busca transformar o histórico de jogos do usuário em uma experiência social e personalizada, permitindo criar listas, registrar jogos zerados ou em andamento, atribuir notas e acompanhar avaliações de amigos e da comunidade.
+ Uma aplicação de review para os amantes de jogos, criada para centralizar em um único espaço a experiência de descobrir, avaliar, organizar e compartilhar opiniões sobre jogos. Diferente das plataformas tradicionais, o aplicativo busca transformar o histórico de jogos do usuário em uma experiência social e personalizada, permitindo criar listas, registrar jogos zerados ou em andamento, atribuir notas e acompanhar avaliações de amigos e da comunidade.
 
-### O diferencial competitivo está em unir a organização pessoal de um backlog com a interação social de uma plataforma de reviews
+ O diferencial competitivo está em unir a organização pessoal de um backlog com a interação social de uma plataforma de reviews
 
 #
 ## Naming rationale
