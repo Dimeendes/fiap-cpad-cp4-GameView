@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import '../screens/game_catalog.dart';
 import '../theme/app_colors.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
@@ -65,29 +65,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // Verifica o e-mail
     if (emailDigitado != emailSalvo) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('E-mail não cadastrado.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('E-mail não cadastrado.')));
       return;
     }
 
     // Verifica a senha
     if (senhaDigitada != senhaSalva) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Senha incorreta.'),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Senha incorreta.')));
       return;
     }
 
     // Login realizado
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Login realizado com sucesso!'),
-      ),
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const GameCatalog()),
     );
   }
 
@@ -97,17 +92,13 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.gradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.gradient),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(25),
               child: Container(
-                constraints: const BoxConstraints(
-                  maxWidth: 420,
-                ),
+                constraints: const BoxConstraints(maxWidth: 420),
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -147,9 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       const Text(
                         'E-mail',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
 
                       const SizedBox(height: 8),
@@ -176,9 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       const Text(
                         'Senha',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
 
                       const SizedBox(height: 8),
@@ -252,8 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    const RegisterScreen(),
+                                builder: (context) => const RegisterScreen(),
                               ),
                             );
                           },
