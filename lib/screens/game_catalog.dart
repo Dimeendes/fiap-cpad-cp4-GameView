@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../data/games.dart';
+import '../config/supabase_config.dart';
+import '../models/game.dart';
+import '../services/supabase_game_service.dart';
 import '../theme/app_colors.dart';
 import 'profile.dart';
 
@@ -20,10 +23,50 @@ class GameCatalog extends StatefulWidget {
 class _GameCatalogState extends State<GameCatalog> {
   final TextEditingController _searchController = TextEditingController();
   _GameSortOrder _sortOrder = _GameSortOrder.alphabetical;
+  List<Game> _games = [];
+  bool _isLoading = true;
+  Object? _loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadGames());
+  }
+
+  Future<void> _loadGames() async {
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+
+    try {
+      if (!SupabaseConfig.isConfigured) {
+        throw StateError(
+          'O banco de jogos não está configurado. '
+          'Siga as instruções do Supabase no README.md.',
+        );
+      }
+
+      final games = await SupabaseGameService(
+        Supabase.instance.client,
+      ).getGames();
+      if (!mounted) return;
+      setState(() {
+        _games = games;
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = error;
+        _isLoading = false;
+      });
+    }
+  }
 
   List<Game> get _filteredGames {
     final query = _searchController.text.trim().toLowerCase();
-    final filtered = games.where((game) {
+    final filtered = _games.where((game) {
       return query.isEmpty ||
           game.name.toLowerCase().contains(query) ||
           game.platform.toLowerCase().contains(query);
@@ -47,6 +90,44 @@ class _GameCatalogState extends State<GameCatalog> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return _buildStatusScreen(
+        const CircularProgressIndicator(color: Colors.white),
+      );
+    }
+
+    if (_loadError != null) {
+      return _buildStatusScreen(
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_off_outlined,
+              color: Colors.white,
+              size: 48,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Não foi possível carregar os jogos do Supabase.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$_loadError',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.85)),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: _loadGames,
+              child: const Text('TENTAR NOVAMENTE'),
+            ),
+          ],
+        ),
+      );
+    }
+
     final filteredGames = _filteredGames;
 
     return Scaffold(
@@ -275,6 +356,26 @@ class _GameCatalogState extends State<GameCatalog> {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusScreen(Widget content) {
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(gradient: AppColors.gradient),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: content,
               ),
             ),
           ),

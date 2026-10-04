@@ -35,4 +35,10 @@ O app utiliza um tom de voz descontraído e próximo da comunidade gamer, com um
 3. Catálogo de jogos com inúmeras opções
 4. Biblioteca para visualizar seus jogos avaliados e adicionar jogos para "Jogar depois"
 5. Personalização de perfil
-    
+
+### Preparar o projeto
+
+Execute o app utlizando esse comando:
+
+`flutter run -d windows --dart-define='SUPABASE_URL=SEU_URL'  --dart-define='SUPABASE_ANON_KEY=SUA_CHAVE_PUBLICA'`
+
