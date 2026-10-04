@@ -78,3 +78,7 @@ insert into public.games (name, platform, score, image_url) values
   ('The Last of Us', 'PlayStation 3', 9.0, 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1r7f.jpg'),
   ('The Legend of Zelda: A Link between Worlds', 'Nintendo 3DS', 9.0, 'https://images.igdb.com/igdb/image/upload/t_cover_big/co3p0j.jpg')
 on conflict (name, platform) do nothing;
+
+-- A biblioteca do usuário (reviews/favoritos/wishlist) é salva no app
+-- por e-mail do perfil (SharedPreferences), isolada por usuário.
+-- Os dados dos jogos continuam vindo de public.games.

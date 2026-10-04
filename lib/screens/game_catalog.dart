@@ -4,8 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import '../models/game.dart';
 import '../services/supabase_game_service.dart';
+import '../navigation/app_navigator.dart';
 import '../theme/app_colors.dart';
-import 'profile.dart';
+import '../widgets/app_page_header.dart';
 
 enum _GameSortOrder { alphabetical, score }
 
@@ -135,71 +136,24 @@ class _GameCatalogState extends State<GameCatalog> {
         width: double.infinity,
         decoration: const BoxDecoration(gradient: AppColors.gradient),
         child: SafeArea(
+          bottom: false,
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1100),
               child: CustomScrollView(
                 slivers: [
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
                     sliver: SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.sports_esports,
-                                color: Colors.white,
-                                size: 30,
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                'GameView',
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                              const Spacer(),
-                              IconButton(
-                                tooltip: 'Meu perfil',
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const ProfileScreen(),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(
-                                  Icons.account_circle_outlined,
-                                  color: Colors.white,
-                                  size: 30,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 30),
-                          Text(
-                            'Descubra seu próximo jogo',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Uma seleção para explorar em diferentes plataformas.',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.88),
-                            ),
+                          AppPageHeader(
+                            title: 'Descubra seu próximo jogo',
+                            subtitle:
+                                'Uma seleção para explorar em diferentes plataformas.',
+                            onOpenProfile: () =>
+                                AppNavigator.openProfile(context),
                           ),
                           const SizedBox(height: 22),
                           TextField(
@@ -370,6 +324,7 @@ class _GameCatalogState extends State<GameCatalog> {
         width: double.infinity,
         decoration: const BoxDecoration(gradient: AppColors.gradient),
         child: SafeArea(
+          bottom: false,
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
