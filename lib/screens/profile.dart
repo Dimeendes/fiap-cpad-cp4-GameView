@@ -14,6 +14,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late final Future<SharedPreferences> _preferences =
       SharedPreferences.getInstance();
 
+  Future<void> _editarPerfil(
+    BuildContext context,
+    String nomeAtual,
+    String emailAtual,
+  ) async {
+    final nomeController = TextEditingController(text: nomeAtual);
+    final emailController = TextEditingController(text: emailAtual);
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Editar perfil'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nomeController,
+                decoration: const InputDecoration(
+                  labelText: 'Nome',
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'E-mail',
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final preferences = await _preferences;
+
+                await preferences.setString(
+                  'nome',
+                  nomeController.text.trim(),
+                );
+
+                await preferences.setString(
+                  'email',
+                  emailController.text.trim(),
+                );
+
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  setState(() {});
+                }
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    nomeController.dispose();
+    emailController.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,10 +154,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            email.isEmpty ? 'Nenhum e-mail cadastrado' : email,
+                            email.isEmpty
+                                ? 'Nenhum e-mail cadastrado'
+                                : email,
                             style: const TextStyle(
                               color: Color(0xFF222222),
                               fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                _editarPerfil(
+                                  context,
+                                  name,
+                                  email,
+                                );
+                              },
+                              child: const Text('Editar perfil'),
                             ),
                           ),
                         ],
