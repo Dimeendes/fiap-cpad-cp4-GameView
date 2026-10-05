@@ -42,3 +42,34 @@ Execute o app utlizando esse comando:
 
 `flutter run -d windows --dart-define='SUPABASE_URL=SEU_URL'  --dart-define='SUPABASE_ANON_KEY=SUA_CHAVE_PUBLICA'`
 
+### Telas do APP
+<table>
+  <tr>
+    <th>Login</th>
+    <th>Catálogo</th>
+    <th>Amigos</th>
+    <th>Biblioteca</th>
+    <th>Configurações</th>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/af12ff1f-3df8-47b5-8fba-a62b10251d83" width="180">
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/5c2f4c70-ddc1-4c7d-a3ed-104c78086588" width="180">
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/d9e6b88a-0360-4fba-8b58-101817cb3c95" width="180">
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/7f362d5a-3267-4e71-b167-8e0dbf2ada92" width="180">
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/3fe744fd-d151-4e3e-8a05-27704f042778" width="180">
+    </td>
+  </tr>
+</table>
+
+
+
+
