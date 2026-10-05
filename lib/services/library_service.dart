@@ -3,6 +3,17 @@ import '../models/library_entry.dart';
 abstract interface class LibraryService {
   Future<List<LibraryEntry>> getLibraryEntries(String userEmail);
 
+  Future<LibraryEntry> addToLibrary({
+    required String userEmail,
+    required int gameId,
+  });
+
+  Future<LibraryEntry> setRating({
+    required String userEmail,
+    required int gameId,
+    required double userScore,
+  });
+
   /// Preparado para a tela de review futura.
   Future<LibraryEntry> upsertReview({
     required String userEmail,

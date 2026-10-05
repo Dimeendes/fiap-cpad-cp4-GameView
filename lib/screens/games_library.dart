@@ -97,9 +97,6 @@ class GamesLibraryScreenState extends State<GamesLibraryScreen> {
     }
   }
 
-  List<LibraryEntry> get _reviewedEntries =>
-      _entries.where((entry) => entry.hasReview).toList();
-
   List<LibraryEntry> get _visibleEntries {
     late final List<LibraryEntry> source;
 
@@ -110,12 +107,20 @@ class GamesLibraryScreenState extends State<GamesLibraryScreen> {
         source = _entries.where((entry) => entry.isFavorite).toList();
       case _LibraryFilter.alphabeticalAsc:
       case _LibraryFilter.alphabeticalDesc:
+        source = _entries
+            .where((entry) => entry.isInLibrary || entry.hasReview)
+            .toList();
       case _LibraryFilter.scoreHighToLow:
       case _LibraryFilter.scoreLowToHigh:
-        source = List<LibraryEntry>.from(_reviewedEntries);
+        source = _entries.where((entry) => entry.hasReview).toList();
     }
 
     source.sort((a, b) {
+      final favoriteComparison = (b.isFavorite ? 1 : 0).compareTo(
+        a.isFavorite ? 1 : 0,
+      );
+      if (favoriteComparison != 0) return favoriteComparison;
+
       switch (_filter) {
         case _LibraryFilter.alphabeticalDesc:
           return b.game.name.toLowerCase().compareTo(a.game.name.toLowerCase());
@@ -269,10 +274,9 @@ class GamesLibraryScreenState extends State<GamesLibraryScreen> {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) => _LibraryGameCard(
                             entry: visibleEntries[index],
-                            showScore:
-                                _filter == _LibraryFilter.scoreHighToLow ||
-                                _filter == _LibraryFilter.scoreLowToHigh ||
-                                visibleEntries[index].userScore != null,
+                            showScore: visibleEntries[index].userScore != null,
+                            onTap: () =>
+                                _showGameDetails(visibleEntries[index]),
                           ),
                           childCount: visibleEntries.length,
                         ),
@@ -284,6 +288,13 @@ class GamesLibraryScreenState extends State<GamesLibraryScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _showGameDetails(LibraryEntry entry) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => _LibraryGameDetailsDialog(entry: entry),
     );
   }
 
@@ -454,75 +465,205 @@ class _EmptyLibraryCard extends StatelessWidget {
 class _LibraryGameCard extends StatelessWidget {
   final LibraryEntry entry;
   final bool showScore;
+  final VoidCallback onTap;
 
-  const _LibraryGameCard({required this.entry, required this.showScore});
+  const _LibraryGameCard({
+    required this.entry,
+    required this.showScore,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final score = entry.userScore ?? entry.game.score;
 
-    return Container(
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.network(
-            entry.game.imageUrl,
-            fit: BoxFit.cover,
-            alignment: Alignment.center,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return const Center(
-                child: CircularProgressIndicator(strokeWidth: 2),
-              );
-            },
-            errorBuilder: (context, error, stackTrace) {
-              return const ColoredBox(
-                color: Color(0xFFF0F3F8),
-                child: Center(
-                  child: Icon(
-                    Icons.broken_image_outlined,
-                    size: 40,
-                    color: Color(0xFFB0B0B0),
+      child: InkWell(
+        onTap: onTap,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(
+              entry.game.imageUrl,
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return const ColoredBox(
+                  color: Color(0xFFF0F3F8),
+                  child: Center(
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      size: 40,
+                      color: Color(0xFFB0B0B0),
+                    ),
+                  ),
+                );
+              },
+            ),
+            if (entry.isFavorite)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Icon(
+                    Icons.favorite,
+                    color: Color(0xFFFF4D6D),
+                    size: 18,
                   ),
                 ),
-              );
-            },
-          ),
-          if (entry.isFavorite)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
+              ),
+            if (entry.reviewText?.trim().isNotEmpty ?? false)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: showScore ? 28 : 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
                   color: Colors.black54,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Icon(
-                  Icons.favorite,
-                  color: Color(0xFFFF4D6D),
-                  size: 16,
+                  child: Text(
+                    entry.reviewText!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      height: 1.2,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          if (showScore)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                color: Colors.black54,
-                child: _UserScoreStars(score: score),
+            if (showScore)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  color: Colors.black54,
+                  child: _UserScoreStars(score: score),
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _LibraryGameDetailsDialog extends StatelessWidget {
+  final LibraryEntry entry;
+
+  const _LibraryGameDetailsDialog({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    final userScore = entry.userScore;
+    final ratingStars = userScore == null
+        ? 0
+        : (userScore / 2).round().clamp(0, 5);
+    final review = entry.reviewText?.trim();
+
+    return AlertDialog(
+      title: Text(entry.game.name),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              entry.game.platform,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Icon(
+                  entry.isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: entry.isFavorite
+                      ? const Color(0xFFFF4D6D)
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                  size: 26,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  entry.isFavorite ? 'Jogo favorito' : 'Não está nos favoritos',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Text('Sua nota', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            if (userScore == null)
+              const Text('Você ainda não avaliou este jogo.')
+            else ...[
+              Row(
+                children: [
+                  ...List.generate(
+                    5,
+                    (index) => Icon(
+                      index < ratingStars ? Icons.star : Icons.star_border,
+                      color: Colors.amber.shade700,
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '${userScore.toStringAsFixed(userScore % 1 == 0 ? 0 : 1)} / 10',
+                    style: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text('$ratingStars de 5 estrelas'),
+            ],
+            const SizedBox(height: 20),
+            Text('Sua review', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: SelectableText(
+                review == null || review.isEmpty
+                    ? 'Você ainda não escreveu uma review.'
+                    : review,
+                style: Theme.of(context).textTheme.bodyLarge
+                    ?.copyWith(height: 1.4),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('FECHAR'),
+        ),
+      ],
     );
   }
 }

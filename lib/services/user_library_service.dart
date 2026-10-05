@@ -43,6 +43,7 @@ class UserLibraryService implements LibraryService {
           game: game,
           userScore: (raw['user_score'] as num?)?.toDouble(),
           reviewText: raw['review_text'] as String?,
+          isInLibrary: raw['is_in_library'] as bool? ?? true,
           isFavorite: raw['is_favorite'] as bool? ?? false,
           isWishlist: raw['is_wishlist'] as bool? ?? false,
         ),
@@ -50,6 +51,39 @@ class UserLibraryService implements LibraryService {
     }
 
     return entries;
+  }
+
+  @override
+  Future<LibraryEntry> addToLibrary({
+    required String userEmail,
+    required int gameId,
+  }) {
+    return _upsert(
+      userEmail: userEmail,
+      gameId: gameId,
+      patch: {'is_in_library': true},
+    );
+  }
+
+  @override
+  Future<LibraryEntry> setRating({
+    required String userEmail,
+    required int gameId,
+    required double userScore,
+  }) {
+    if (userScore < 2 || userScore > 10 || userScore % 2 != 0) {
+      throw ArgumentError.value(
+        userScore,
+        'userScore',
+        'A avaliação deve corresponder a 1–5 estrelas inteiras.',
+      );
+    }
+
+    return _upsert(
+      userEmail: userEmail,
+      gameId: gameId,
+      patch: {'user_score': userScore, 'is_in_library': true},
+    );
   }
 
   @override
@@ -65,6 +99,7 @@ class UserLibraryService implements LibraryService {
       patch: {
         'user_score': userScore,
         'review_text': reviewText,
+        'is_in_library': true,
       },
     );
   }
@@ -110,6 +145,7 @@ class UserLibraryService implements LibraryService {
             'game_id': gameId,
             'user_score': null,
             'review_text': null,
+            'is_in_library': false,
             'is_favorite': false,
             'is_wishlist': false,
           };
@@ -120,8 +156,9 @@ class UserLibraryService implements LibraryService {
         ((current['review_text'] as String?)?.trim().isNotEmpty ?? false);
     final isFavorite = current['is_favorite'] as bool? ?? false;
     final isWishlist = current['is_wishlist'] as bool? ?? false;
+    final isInLibrary = current['is_in_library'] as bool? ?? false;
 
-    if (!hasReview && !isFavorite && !isWishlist) {
+    if (!hasReview && !isFavorite && !isWishlist && !isInLibrary) {
       if (index >= 0) entries.removeAt(index);
     } else if (index >= 0) {
       entries[index] = current;
@@ -142,6 +179,7 @@ class UserLibraryService implements LibraryService {
       game: game,
       userScore: (current['user_score'] as num?)?.toDouble(),
       reviewText: current['review_text'] as String?,
+      isInLibrary: isInLibrary,
       isFavorite: isFavorite,
       isWishlist: isWishlist,
     );

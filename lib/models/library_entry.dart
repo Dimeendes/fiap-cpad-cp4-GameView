@@ -1,13 +1,14 @@
 import 'game.dart';
 
 /// Entrada da biblioteca do usuário.
-/// Pronta para reviews, favoritos e lista de desejo (escrita virá depois).
+/// Guarda a participação na biblioteca, a nota pessoal e demais preferências.
 class LibraryEntry {
   final int? id;
   final String userEmail;
   final Game game;
   final double? userScore;
   final String? reviewText;
+  final bool isInLibrary;
   final bool isFavorite;
   final bool isWishlist;
 
@@ -17,6 +18,7 @@ class LibraryEntry {
     required this.game,
     this.userScore,
     this.reviewText,
+    this.isInLibrary = true,
     this.isFavorite = false,
     this.isWishlist = false,
   });
@@ -30,6 +32,7 @@ class LibraryEntry {
     Game? game,
     double? userScore,
     String? reviewText,
+    bool? isInLibrary,
     bool? isFavorite,
     bool? isWishlist,
   }) {
@@ -39,6 +42,7 @@ class LibraryEntry {
       game: game ?? this.game,
       userScore: userScore ?? this.userScore,
       reviewText: reviewText ?? this.reviewText,
+      isInLibrary: isInLibrary ?? this.isInLibrary,
       isFavorite: isFavorite ?? this.isFavorite,
       isWishlist: isWishlist ?? this.isWishlist,
     );
@@ -58,6 +62,7 @@ class LibraryEntry {
       game: Game.fromMap(gameMap),
       userScore: (map['user_score'] as num?)?.toDouble(),
       reviewText: map['review_text'] as String?,
+      isInLibrary: map['is_in_library'] as bool? ?? true,
       isFavorite: map['is_favorite'] as bool? ?? false,
       isWishlist: map['is_wishlist'] as bool? ?? false,
     );
@@ -71,6 +76,7 @@ class LibraryEntry {
       'game_id': game.id,
       'user_score': userScore,
       'review_text': reviewText,
+      'is_in_library': isInLibrary,
       'is_favorite': isFavorite,
       'is_wishlist': isWishlist,
     };
