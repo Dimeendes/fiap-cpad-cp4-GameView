@@ -9,6 +9,7 @@ import '../services/supabase_game_service.dart';
 import '../services/user_library_service.dart';
 import '../navigation/app_navigator.dart';
 import '../theme/app_colors.dart';
+import '../widgets/game_cover.dart';
 import '../widgets/app_page_header.dart';
 
 enum _GameSortOrder { alphabetical, score }
@@ -143,31 +144,10 @@ class _GameCatalogState extends State<GameCatalog> {
       builder: (context) => _GameDetailsDialog(
         game: game,
         entry: _entryFor(game),
-        onAddToLibrary: () => _addToLibrary(game),
         onSaveReview: (stars, reviewText) =>
             _saveReview(game, stars, reviewText),
       ),
     );
-  }
-
-  Future<void> _addToLibrary(Game game) async {
-    final gameId = game.id;
-    final email = _userEmail;
-    if (gameId == null || email == null) {
-      throw StateError('Não foi possível identificar o jogo ou o usuário.');
-    }
-
-    final entry = await UserLibraryService(Supabase.instance.client)
-        .addToLibrary(userEmail: email, gameId: gameId);
-    if (!mounted) return;
-    setState(() {
-      _libraryLoadError = null;
-      _libraryEntries = [
-        for (final existing in _libraryEntries)
-          if (existing.game.id != gameId) existing,
-        entry,
-      ];
-    });
   }
 
   Future<void> _saveReview(Game game, int? stars, String? reviewText) async {
@@ -630,13 +610,11 @@ class _GameCard extends StatelessWidget {
 class _GameDetailsDialog extends StatefulWidget {
   final Game game;
   final LibraryEntry? entry;
-  final Future<void> Function() onAddToLibrary;
   final Future<void> Function(int? stars, String? reviewText) onSaveReview;
 
   const _GameDetailsDialog({
     required this.game,
     required this.entry,
-    required this.onAddToLibrary,
     required this.onSaveReview,
   });
 
@@ -647,14 +625,12 @@ class _GameDetailsDialog extends StatefulWidget {
 class _GameDetailsDialogState extends State<_GameDetailsDialog> {
   late final TextEditingController _reviewController;
   late int _selectedRating;
-  late bool _isInLibrary;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     _selectedRating = ((widget.entry?.userScore ?? 0) / 2).round();
-    _isInLibrary = widget.entry?.isInLibrary ?? false;
     _reviewController = TextEditingController(
       text: widget.entry?.reviewText ?? '',
     );
@@ -676,7 +652,6 @@ class _GameDetailsDialogState extends State<_GameDetailsDialog> {
       if (!mounted) return;
       setState(() {
         _isSaving = false;
-        _isInLibrary = true;
       });
       if (closeOnSuccess) Navigator.of(context).pop();
     } catch (error) {
@@ -691,12 +666,40 @@ class _GameDetailsDialogState extends State<_GameDetailsDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      scrollable: true,
       title: Text(widget.game.name),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.game.platform),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.game.platform),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.game.description.trim().isEmpty
+                          ? 'Descrição não cadastrada no banco de dados.'
+                          : widget.game.description,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 112,
+                  height: 168,
+                  child: GameCover(imageUrl: widget.game.imageUrl),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 20),
           const Text(
             'Sua avaliação',
@@ -734,47 +737,44 @@ class _GameDetailsDialogState extends State<_GameDetailsDialog> {
               border: OutlineInputBorder(),
             ),
           ),
-          if (_isInLibrary)
-            const Center(child: Text('Este jogo já está na sua biblioteca.')),
+          const SizedBox(height: 4),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              TextButton(
+                onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+                child: const Text('FECHAR'),
+              ),
+              FilledButton(
+                onPressed:
+                    _isSaving ||
+                        (_selectedRating == 0 &&
+                            _reviewController.text.trim().isEmpty &&
+                            (widget.entry?.reviewText?.trim().isEmpty ?? true))
+                    ? null
+                    : () => _save(
+                        () => widget.onSaveReview(
+                          _selectedRating == 0 ? null : _selectedRating,
+                          _reviewController.text.trim().isEmpty
+                              ? null
+                              : _reviewController.text.trim(),
+                        ),
+                        closeOnSuccess: true,
+                      ),
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('AVALIAR'),
+              ),
+            ],
+          ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-          child: const Text('FECHAR'),
-        ),
-        if (!_isInLibrary)
-          FilledButton.icon(
-            onPressed: _isSaving
-                ? null
-                : () => _save(widget.onAddToLibrary, closeOnSuccess: true),
-            icon: const Icon(Icons.library_add_outlined),
-            label: const Text('ADICIONAR À BIBLIOTECA'),
-          ),
-        FilledButton(
-          onPressed:
-              _isSaving ||
-                  (_selectedRating == 0 &&
-                      _reviewController.text.trim().isEmpty &&
-                      (widget.entry?.reviewText?.trim().isEmpty ?? true))
-              ? null
-              : () => _save(
-                  () => widget.onSaveReview(
-                    _selectedRating == 0 ? null : _selectedRating,
-                    _reviewController.text.trim().isEmpty
-                        ? null
-                        : _reviewController.text.trim(),
-                  ),
-                ),
-          child: _isSaving
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('SALVAR REVIEW'),
-        ),
-      ],
     );
   }
 }

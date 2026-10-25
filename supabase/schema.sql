@@ -4,9 +4,13 @@ create table if not exists public.games (
   platform text not null,
   score numeric(3, 1) not null check (score >= 0 and score <= 10),
   image_url text not null,
+  description text,
   created_at timestamptz not null default now(),
   unique (name, platform)
 );
+
+alter table public.games
+  add column if not exists description text;
 
 alter table public.games enable row level security;
 

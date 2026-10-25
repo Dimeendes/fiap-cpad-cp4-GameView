@@ -38,9 +38,22 @@ O app utiliza um tom de voz descontraído e próximo da comunidade gamer, com um
 
 ### Preparar o projeto
 
-Execute o app utlizando esse comando:
+O catálogo busca os jogos na tabela `public.games` do Supabase. Antes de executar o app:
 
-`flutter run -d windows --dart-define='SUPABASE_URL=SEU_URL'  --dart-define='SUPABASE_ANON_KEY=SUA_CHAVE_PUBLICA'`
+1. Crie um projeto no Supabase.
+2. No painel do projeto, abra **SQL Editor** e execute todo o script [`supabase/schema.sql`](./supabase/schema.sql). Ele cria a tabela, configura a leitura pública, adiciona a coluna `description` e insere os jogos iniciais. Se a tabela já existia, execute o script novamente para adicionar a coluna.
+3. Copie o **Project URL** e a chave pública **anon** (ou **publishable**) nas configurações de API do projeto. Não use a chave `service_role` no app.
+4. No PowerShell, na pasta do projeto, execute o comando abaixo substituindo os exemplos pelos valores do seu projeto:
+
+```powershell
+flutter run -d windows `
+  --dart-define="SUPABASE_URL=https://<project-ref>.supabase.co" `
+  --dart-define="SUPABASE_ANON_KEY=<sua-chave-publica>"
+```
+
+`SEU_URL` e `SUA_CHAVE_PUBLICA` são marcadores de exemplo, não valores funcionais. Se o catálogo exibir **“Não foi possível carregar os jogos do Supabase”**, confira a mensagem de erro exibida abaixo do aviso; ela ajuda a identificar se a tabela ainda não foi criada ou se as credenciais estão incorretas.
+
+Preencha a coluna `description` dos jogos em `public.games` pelo **Table Editor** ou pelo **SQL Editor**. O modal de avaliação exibe essa descrição e a imagem cadastrada em `image_url`.
 
 ### Telas do APP
 <table>
@@ -69,7 +82,6 @@ Execute o app utlizando esse comando:
     </td>
   </tr>
 </table>
-
 
 
 

@@ -4,6 +4,7 @@ class Game {
   final String platform;
   final double score;
   final String imageUrl;
+  final String description;
 
   const Game({
     this.id,
@@ -11,6 +12,7 @@ class Game {
     required this.platform,
     required this.score,
     required this.imageUrl,
+    this.description = '',
   });
 
   factory Game.fromMap(Map<String, dynamic> map) {
@@ -20,6 +22,7 @@ class Game {
       platform: map['platform'] as String,
       score: (map['score'] as num).toDouble(),
       imageUrl: map['image_url'] as String,
+      description: map['description'] as String? ?? '',
     );
   }
 }

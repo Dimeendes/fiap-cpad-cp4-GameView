@@ -6,8 +6,8 @@ import '../screens/friend_profile.dart';
 import '../screens/profile.dart';
 
 class AppNavigator {
-  static void openProfile(BuildContext context) {
-    Navigator.push(
+  static Future<void> openProfile(BuildContext context) async {
+    await Navigator.push<void>(
       context,
       MaterialPageRoute(builder: (_) => const ProfileScreen()),
     );

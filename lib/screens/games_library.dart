@@ -526,29 +526,6 @@ class _LibraryGameCard extends StatelessWidget {
                   ),
                 ),
               ),
-            if (entry.reviewText?.trim().isNotEmpty ?? false)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: showScore ? 28 : 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 6,
-                  ),
-                  color: Colors.black54,
-                  child: Text(
-                    entry.reviewText!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-              ),
             if (showScore)
               Positioned(
                 left: 0,

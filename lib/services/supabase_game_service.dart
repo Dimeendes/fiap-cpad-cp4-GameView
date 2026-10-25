@@ -12,7 +12,7 @@ class SupabaseGameService implements GameService {
   Future<List<Game>> getGames() async {
     final rows = await _client
         .from('games')
-        .select('id, name, platform, score, image_url')
+        .select('id, name, platform, score, image_url, description')
         .order('name');
 
     return rows.map((row) => Game.fromMap(row)).toList();
