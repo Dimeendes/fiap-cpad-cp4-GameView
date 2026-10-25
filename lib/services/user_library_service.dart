@@ -47,6 +47,7 @@ class UserLibraryService implements LibraryService {
           isInLibrary: raw['is_in_library'] as bool? ?? true,
           isFavorite: raw['is_favorite'] as bool? ?? false,
           isWishlist: raw['is_wishlist'] as bool? ?? false,
+          loggedAtMillis: raw['logged_at'] as int?,
         ),
       );
     }
@@ -152,6 +153,9 @@ class UserLibraryService implements LibraryService {
           };
 
     current.addAll(patch);
+    if (patch.containsKey('user_score') || patch.containsKey('review_text')) {
+      current['logged_at'] = DateTime.now().millisecondsSinceEpoch;
+    }
 
     final hasReview =
         current['user_score'] != null ||
@@ -185,6 +189,7 @@ class UserLibraryService implements LibraryService {
       isInLibrary: isInLibrary,
       isFavorite: isFavorite,
       isWishlist: isWishlist,
+      loggedAtMillis: current['logged_at'] as int?,
     );
   }
 

@@ -5,12 +5,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import '../models/game.dart';
 import '../models/library_entry.dart';
+import '../services/friends_service.dart';
 import '../services/supabase_game_service.dart';
 import '../services/user_library_service.dart';
 import '../navigation/app_navigator.dart';
 import '../theme/app_colors.dart';
-import '../widgets/game_cover.dart';
 import '../widgets/app_page_header.dart';
+import '../widgets/game_review_dialog.dart';
 
 enum _GameSortOrder { alphabetical, score }
 
@@ -139,37 +140,28 @@ class _GameCatalogState extends State<GameCatalog> {
       return;
     }
 
+    final directory = await FriendsService.loadDirectory();
+    if (!mounted) return;
     await showDialog<void>(
       context: context,
-      builder: (context) => _GameDetailsDialog(
+      builder: (context) => GameReviewDialog(
         game: game,
         entry: _entryFor(game),
-        onSaveReview: (stars, reviewText) =>
-            _saveReview(game, stars, reviewText),
+        userEmail: _userEmail!,
+        service: UserLibraryService(Supabase.instance.client),
+        friendsWhoPlayed: directory.friendsWhoPlayed(game.name),
+        onChanged: _replaceEntry,
       ),
     );
   }
 
-  Future<void> _saveReview(Game game, int? stars, String? reviewText) async {
-    final gameId = game.id;
-    final email = _userEmail;
-    if (gameId == null || email == null) {
-      throw StateError('Não foi possível identificar o jogo ou o usuário.');
-    }
-
-    final entry = await UserLibraryService(Supabase.instance.client)
-        .upsertReview(
-          userEmail: email,
-          gameId: gameId,
-          userScore: stars == null ? null : (stars * 2).toDouble(),
-          reviewText: reviewText,
-        );
+  void _replaceEntry(LibraryEntry entry) {
     if (!mounted) return;
     setState(() {
       _libraryLoadError = null;
       _libraryEntries = [
         for (final existing in _libraryEntries)
-          if (existing.game.id != gameId) existing,
+          if (existing.game.id != entry.game.id) existing,
         entry,
       ];
     });
@@ -190,15 +182,7 @@ class _GameCatalogState extends State<GameCatalog> {
       final entry = await UserLibraryService(
         Supabase.instance.client,
       ).setFavorite(userEmail: email, gameId: gameId, isFavorite: isFavorite);
-      if (!mounted) return;
-      setState(() {
-        _libraryLoadError = null;
-        _libraryEntries = [
-          for (final existing in _libraryEntries)
-            if (existing.game.id != gameId) existing,
-          entry,
-        ];
-      });
+      _replaceEntry(entry);
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -602,178 +586,6 @@ class _GameCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _GameDetailsDialog extends StatefulWidget {
-  final Game game;
-  final LibraryEntry? entry;
-  final Future<void> Function(int? stars, String? reviewText) onSaveReview;
-
-  const _GameDetailsDialog({
-    required this.game,
-    required this.entry,
-    required this.onSaveReview,
-  });
-
-  @override
-  State<_GameDetailsDialog> createState() => _GameDetailsDialogState();
-}
-
-class _GameDetailsDialogState extends State<_GameDetailsDialog> {
-  late final TextEditingController _reviewController;
-  late int _selectedRating;
-  bool _isSaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedRating = ((widget.entry?.userScore ?? 0) / 2).round();
-    _reviewController = TextEditingController(
-      text: widget.entry?.reviewText ?? '',
-    );
-  }
-
-  @override
-  void dispose() {
-    _reviewController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save(
-    Future<void> Function() action, {
-    bool closeOnSuccess = false,
-  }) async {
-    setState(() => _isSaving = true);
-    try {
-      await action();
-      if (!mounted) return;
-      setState(() {
-        _isSaving = false;
-      });
-      if (closeOnSuccess) Navigator.of(context).pop();
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Não foi possível salvar: $error')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      scrollable: true,
-      title: Text(widget.game.name),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(widget.game.platform),
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.game.description.trim().isEmpty
-                          ? 'Descrição não cadastrada no banco de dados.'
-                          : widget.game.description,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: 112,
-                  height: 168,
-                  child: GameCover(imageUrl: widget.game.imageUrl),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Sua avaliação',
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(5, (index) {
-              final stars = index + 1;
-              return IconButton(
-                tooltip: '$stars ${stars == 1 ? 'estrela' : 'estrelas'}',
-                onPressed: _isSaving
-                    ? null
-                    : () => setState(() => _selectedRating = stars),
-                icon: Icon(
-                  stars <= _selectedRating ? Icons.star : Icons.star_border,
-                  color: Colors.amber,
-                  size: 32,
-                ),
-              );
-            }),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _reviewController,
-            enabled: !_isSaving,
-            maxLines: 4,
-            maxLength: 1000,
-            onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: 'Sua review',
-              hintText: 'O que você achou deste jogo?',
-              alignLabelWithHint: true,
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Wrap(
-            alignment: WrapAlignment.end,
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              TextButton(
-                onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-                child: const Text('FECHAR'),
-              ),
-              FilledButton(
-                onPressed:
-                    _isSaving ||
-                        (_selectedRating == 0 &&
-                            _reviewController.text.trim().isEmpty &&
-                            (widget.entry?.reviewText?.trim().isEmpty ?? true))
-                    ? null
-                    : () => _save(
-                        () => widget.onSaveReview(
-                          _selectedRating == 0 ? null : _selectedRating,
-                          _reviewController.text.trim().isEmpty
-                              ? null
-                              : _reviewController.text.trim(),
-                        ),
-                        closeOnSuccess: true,
-                      ),
-                child: _isSaving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('AVALIAR'),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

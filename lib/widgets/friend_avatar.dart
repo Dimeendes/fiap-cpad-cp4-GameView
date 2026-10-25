@@ -1,8 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../models/friend.dart';
 
-/// Avatar do amigo: inicial do nome sobre a cor de destaque dele.
+/// Avatar da conta: foto, se houver; senão a inicial sobre a cor de destaque.
 class FriendAvatar extends StatelessWidget {
   final Friend friend;
   final double radius;
@@ -11,17 +13,23 @@ class FriendAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final path = friend.photoPath;
+    final hasPhoto = path != null && File(path).existsSync();
+
     return CircleAvatar(
       radius: radius,
       backgroundColor: friend.accent,
-      child: Text(
-        friend.initial,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: radius * 0.85,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+      backgroundImage: hasPhoto ? FileImage(File(path)) : null,
+      child: hasPhoto
+          ? null
+          : Text(
+              friend.initial,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: radius * 0.85,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
     );
   }
 }

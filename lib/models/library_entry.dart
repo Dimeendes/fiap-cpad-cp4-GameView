@@ -12,6 +12,9 @@ class LibraryEntry {
   final bool isFavorite;
   final bool isWishlist;
 
+  /// Quando a nota/análise foi registrada pela última vez (diário).
+  final int? loggedAtMillis;
+
   const LibraryEntry({
     this.id,
     required this.userEmail,
@@ -21,6 +24,7 @@ class LibraryEntry {
     this.isInLibrary = true,
     this.isFavorite = false,
     this.isWishlist = false,
+    this.loggedAtMillis,
   });
 
   bool get hasReview =>
@@ -35,6 +39,7 @@ class LibraryEntry {
     bool? isInLibrary,
     bool? isFavorite,
     bool? isWishlist,
+    int? loggedAtMillis,
   }) {
     return LibraryEntry(
       id: id ?? this.id,
@@ -45,6 +50,7 @@ class LibraryEntry {
       isInLibrary: isInLibrary ?? this.isInLibrary,
       isFavorite: isFavorite ?? this.isFavorite,
       isWishlist: isWishlist ?? this.isWishlist,
+      loggedAtMillis: loggedAtMillis ?? this.loggedAtMillis,
     );
   }
 
@@ -65,6 +71,7 @@ class LibraryEntry {
       isInLibrary: map['is_in_library'] as bool? ?? true,
       isFavorite: map['is_favorite'] as bool? ?? false,
       isWishlist: map['is_wishlist'] as bool? ?? false,
+      loggedAtMillis: map['logged_at'] as int?,
     );
   }
 
@@ -79,6 +86,7 @@ class LibraryEntry {
       'is_in_library': isInLibrary,
       'is_favorite': isFavorite,
       'is_wishlist': isWishlist,
+      'logged_at': loggedAtMillis,
     };
   }
 }

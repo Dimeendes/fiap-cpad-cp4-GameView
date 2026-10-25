@@ -7,12 +7,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import '../models/library_entry.dart';
 import '../navigation/app_navigator.dart';
+import '../services/friends_service.dart';
 import '../services/user_library_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_page_header.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/game_review_dialog.dart';
 
 enum _LibraryFilter {
+  diary,
   alphabeticalAsc,
   alphabeticalDesc,
   scoreHighToLow,
@@ -40,6 +43,7 @@ class GamesLibraryScreen extends StatefulWidget {
 class GamesLibraryScreenState extends State<GamesLibraryScreen> {
   _LibraryFilter _filter = _LibraryFilter.alphabeticalAsc;
   List<LibraryEntry> _entries = [];
+  final Set<int> _favoriteUpdates = {};
   bool _isLoading = true;
   Object? _loadError;
   String? _userEmail;
@@ -113,6 +117,11 @@ class GamesLibraryScreenState extends State<GamesLibraryScreen> {
       case _LibraryFilter.scoreHighToLow:
       case _LibraryFilter.scoreLowToHigh:
         source = _entries.where((entry) => entry.hasReview).toList();
+      case _LibraryFilter.diary:
+        // Diário: tudo o que você avaliou, do registro mais novo ao mais antigo.
+        return _entries.where((entry) => entry.hasReview).toList()..sort(
+          (a, b) => (b.loggedAtMillis ?? 0).compareTo(a.loggedAtMillis ?? 0),
+        );
     }
 
     source.sort((a, b) {
@@ -131,6 +140,7 @@ class GamesLibraryScreenState extends State<GamesLibraryScreen> {
         case _LibraryFilter.alphabeticalAsc:
         case _LibraryFilter.wishlist:
         case _LibraryFilter.favorites:
+        case _LibraryFilter.diary:
           return a.game.name.toLowerCase().compareTo(b.game.name.toLowerCase());
       }
     });
@@ -275,6 +285,11 @@ class GamesLibraryScreenState extends State<GamesLibraryScreen> {
                           (context, index) => _LibraryGameCard(
                             entry: visibleEntries[index],
                             showScore: visibleEntries[index].userScore != null,
+                            isUpdatingFavorite: _favoriteUpdates.contains(
+                              visibleEntries[index].game.id,
+                            ),
+                            onToggleFavorite: () =>
+                                _toggleFavorite(visibleEntries[index]),
                             onTap: () =>
                                 _showGameDetails(visibleEntries[index]),
                           ),
@@ -291,10 +306,59 @@ class GamesLibraryScreenState extends State<GamesLibraryScreen> {
     );
   }
 
-  Future<void> _showGameDetails(LibraryEntry entry) {
-    return showDialog<void>(
+  void _replaceEntry(LibraryEntry entry) {
+    if (!mounted) return;
+    setState(() {
+      _entries = [
+        for (final existing in _entries)
+          if (existing.game.id != entry.game.id) existing,
+        entry,
+      ];
+    });
+  }
+
+  Future<void> _toggleFavorite(LibraryEntry entry) async {
+    final gameId = entry.game.id;
+    final email = _userEmail;
+    if (gameId == null || email == null) return;
+    if (_favoriteUpdates.contains(gameId)) return;
+
+    setState(() => _favoriteUpdates.add(gameId));
+    try {
+      final updated = await UserLibraryService(Supabase.instance.client)
+          .setFavorite(
+            userEmail: email,
+            gameId: gameId,
+            isFavorite: !entry.isFavorite,
+          );
+      _replaceEntry(updated);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Não foi possível atualizar o favorito: $error'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _favoriteUpdates.remove(gameId));
+    }
+  }
+
+  Future<void> _showGameDetails(LibraryEntry entry) async {
+    final email = _userEmail;
+    if (email == null) return;
+    final directory = await FriendsService.loadDirectory();
+    if (!mounted) return;
+    await showDialog<void>(
       context: context,
-      builder: (context) => _LibraryGameDetailsDialog(entry: entry),
+      builder: (context) => GameReviewDialog(
+        game: entry.game,
+        entry: entry,
+        userEmail: email,
+        service: UserLibraryService(Supabase.instance.client),
+        friendsWhoPlayed: directory.friendsWhoPlayed(entry.game.name),
+        onChanged: _replaceEntry,
+      ),
     );
   }
 
@@ -385,6 +449,10 @@ class _FilterCard extends StatelessWidget {
             ),
             items: const [
               DropdownMenuItem(
+                value: _LibraryFilter.diary,
+                child: Text('Diário (mais recentes)'),
+              ),
+              DropdownMenuItem(
                 value: _LibraryFilter.alphabeticalAsc,
                 child: Text('Alfabética (A-Z)'),
               ),
@@ -465,11 +533,15 @@ class _EmptyLibraryCard extends StatelessWidget {
 class _LibraryGameCard extends StatelessWidget {
   final LibraryEntry entry;
   final bool showScore;
+  final bool isUpdatingFavorite;
+  final VoidCallback onToggleFavorite;
   final VoidCallback onTap;
 
   const _LibraryGameCard({
     required this.entry,
     required this.showScore,
+    required this.isUpdatingFavorite,
+    required this.onToggleFavorite,
     required this.onTap,
   });
 
@@ -509,21 +581,63 @@ class _LibraryGameCard extends StatelessWidget {
                 );
               },
             ),
-            if (entry.isFavorite)
-              Positioned(
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Material(
+                color: Colors.black54,
+                shape: const CircleBorder(),
+                child: IconButton(
+                  tooltip: entry.isFavorite
+                      ? 'Remover dos favoritos'
+                      : 'Adicionar aos favoritos',
+                  onPressed: isUpdatingFavorite ? null : onToggleFavorite,
+                  icon: isUpdatingFavorite
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Icon(
+                          entry.isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: entry.isFavorite
+                              ? const Color(0xFFFF4D6D)
+                              : Colors.white,
+                        ),
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 40,
+                    height: 40,
+                  ),
+                  padding: EdgeInsets.zero,
+                ),
+              ),
+            ),
+            if (entry.isWishlist)
+              const Positioned(
                 top: 8,
-                right: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Icon(
-                    Icons.favorite,
-                    color: Color(0xFFFF4D6D),
-                    size: 18,
-                  ),
+                left: 8,
+                child: Icon(
+                  Icons.bookmark,
+                  color: Colors.tealAccent,
+                  size: 24,
+                  semanticLabel: 'Quero jogar',
+                ),
+              ),
+            if (entry.reviewText?.trim().isNotEmpty ?? false)
+              const Positioned(
+                top: 36,
+                left: 8,
+                child: Icon(
+                  Icons.notes,
+                  color: Colors.white,
+                  size: 20,
+                  semanticLabel: 'Tem análise',
                 ),
               ),
             if (showScore)
@@ -540,107 +654,6 @@ class _LibraryGameCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _LibraryGameDetailsDialog extends StatelessWidget {
-  final LibraryEntry entry;
-
-  const _LibraryGameDetailsDialog({required this.entry});
-
-  @override
-  Widget build(BuildContext context) {
-    final userScore = entry.userScore;
-    final ratingStars = userScore == null
-        ? 0
-        : (userScore / 2).round().clamp(0, 5);
-    final review = entry.reviewText?.trim();
-
-    return AlertDialog(
-      title: Text(entry.game.name),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              entry.game.platform,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Icon(
-                  entry.isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: entry.isFavorite
-                      ? const Color(0xFFFF4D6D)
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                  size: 26,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  entry.isFavorite ? 'Jogo favorito' : 'Não está nos favoritos',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Text('Sua nota', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            if (userScore == null)
-              const Text('Você ainda não avaliou este jogo.')
-            else ...[
-              Row(
-                children: [
-                  ...List.generate(
-                    5,
-                    (index) => Icon(
-                      index < ratingStars ? Icons.star : Icons.star_border,
-                      color: Colors.amber.shade700,
-                      size: 26,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    '${userScore.toStringAsFixed(userScore % 1 == 0 ? 0 : 1)} / 10',
-                    style: Theme.of(context).textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text('$ratingStars de 5 estrelas'),
-            ],
-            const SizedBox(height: 20),
-            Text('Sua review', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: SelectableText(
-                review == null || review.isEmpty
-                    ? 'Você ainda não escreveu uma review.'
-                    : review,
-                style: Theme.of(context).textTheme.bodyLarge
-                    ?.copyWith(height: 1.4),
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('FECHAR'),
-        ),
-      ],
     );
   }
 }
