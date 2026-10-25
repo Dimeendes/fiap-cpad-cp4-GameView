@@ -38,21 +38,43 @@ O app utiliza um tom de voz descontraído e próximo da comunidade gamer, com um
 
 O app permite cadastrar mais de uma conta neste dispositivo. Contas, senhas e biblioteca são armazenadas localmente; cada biblioteca e foto de perfil usa um ID estável próprio, então alterar o e-mail não desvincula os dados. Essas informações não são sincronizadas entre dispositivos.
 
-### Rodar o projeto
+## Rodar o projeto
 
 `flutter run -d windows --dart-define="SUPABASE_URL=https://<project-ref>.supabase.co" --dart-define="SUPABASE_ANON_KEY=<sua-chave-publica>"`
 
-### Público alvo
+## Público alvo
 
 Jogadores: Atualmente jogos são muito caros, com a plataforma você pode acompanhar as médias de notas do jogos para decidir se compensa comprar o jogo ou não além de catálogar os seus próprios.
 
 Desenvolvedores: Ler feedbacks da comunidade sobre quais pontos ainda podem ser melhorados no jogo desenvolvido e receber até idéias de possíveis atualizações.
 
-### Modelo de negócio
+## Modelo de negócio
 
 Para monetizar o app pensamos em parcerias e afiliados com lojas de jogos para ganharmos uma comissão por uma compra feita por um link de um jogo do nosso app.
 
-### Telas do APP
+## Arquitetura do projeto
+
+```
+lib/
+├── main.dart
+├── config/       # Configuração e variáveis de ambiente do Supabase
+├── data/         # Dados de demonstração, como os perfis de amigos
+├── models/       # Modelos de jogos, usuários e itens da biblioteca
+├── navigation/   # Rotas e identificação das páginas do aplicativo
+├── screens/      # Telas de login, cadastro, catálogo, biblioteca e perfil
+├── services/     # Acesso a dados, regras e persistência local
+├── theme/        # Cores e elementos visuais do tema
+├── utils/        # Funções utilitárias
+└── widgets/      # Componentes reutilizáveis da interface
+```
+
+## Aprendizados do grupo
+
+**Banco de dados:** O principal ponto que aprendemos foi a utilizar o supabase para hospedar o nosso banco de dados, ele facilita muito tanto a gestão quanto a criação dos dados
+
+**Persistência de dados:** Também aprendemos a criar a persistência de dados entre contas para realização do projeto em flutter
+
+## Telas do APP
 <table>
   <tr>
     <th>Login</th>
