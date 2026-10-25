@@ -36,6 +36,8 @@ O app utiliza um tom de voz descontraído e próximo da comunidade gamer, com um
 4. Biblioteca para visualizar seus jogos avaliados e adicionar jogos para "Jogar depois"
 5. Personalização de perfil
 
+O cadastro e a biblioteca são armazenados localmente no dispositivo. A biblioteca é associada a um ID estável criado para a conta, então alterar o e-mail não a desvincula; os dados não são sincronizados entre dispositivos.
+
 ### Preparar o projeto
 
 O catálogo busca os jogos na tabela `public.games` do Supabase. Antes de executar o app:
@@ -82,6 +84,5 @@ Preencha a coluna `description` dos jogos em `public.games` pelo **Table Editor*
     </td>
   </tr>
 </table>
-
 
 

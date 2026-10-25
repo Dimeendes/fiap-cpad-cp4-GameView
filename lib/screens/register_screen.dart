@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
+import '../services/user_identity_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -60,17 +61,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Este e-mail já está cadastrado.',
-          ),
-        ),
+        const SnackBar(content: Text('Este e-mail já está cadastrado.')),
       );
 
       return;
     }
 
     // Salva os dados da conta.
+    await UserIdentityService().createAccountId();
     await prefs.setString('nome', nome);
     await prefs.setString('email', email);
     await prefs.setString('senha', senha);
@@ -82,11 +80,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Conta criada com sucesso! 🎮',
-        ),
-      ),
+      const SnackBar(content: Text('Conta criada com sucesso! 🎮')),
     );
 
     // Volta para a tela de Login.
@@ -103,17 +97,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.gradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.gradient),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(25),
               child: Container(
-                constraints: const BoxConstraints(
-                  maxWidth: 420,
-                ),
+                constraints: const BoxConstraints(maxWidth: 420),
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -165,9 +155,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       const Text(
                         'Nome',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
 
                       const SizedBox(height: 8),
@@ -193,9 +181,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       const Text(
                         'E-mail',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
 
                       const SizedBox(height: 8),
@@ -210,8 +196,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             return 'Digite seu e-mail';
                           }
 
-                          if (!value.contains('@') ||
-                              !value.contains('.')) {
+                          if (!value.contains('@') || !value.contains('.')) {
                             return 'Digite um e-mail válido';
                           }
 
@@ -223,9 +208,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       const Text(
                         'Senha',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
 
                       const SizedBox(height: 8),
@@ -264,9 +247,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       const Text(
                         'Confirmar senha',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
 
                       const SizedBox(height: 8),
@@ -305,9 +286,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 28),
 
                       CustomButton(
-                        text: _isLoading
-                            ? 'CRIANDO...'
-                            : 'CRIAR CONTA',
+                        text: _isLoading ? 'CRIANDO...' : 'CRIAR CONTA',
                         onPressed: _isLoading ? () {} : _criarConta,
                       ),
 

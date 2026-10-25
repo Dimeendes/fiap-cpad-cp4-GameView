@@ -7,17 +7,18 @@ import '../models/game.dart';
 import '../models/library_entry.dart';
 import 'library_service.dart';
 import 'supabase_game_service.dart';
+import 'user_identity_service.dart';
 
 /// Biblioteca por usuário.
-/// Metadados (review/favorito/wishlist) ficam isolados por e-mail;
+/// Metadados (review/favorito/wishlist) ficam isolados por ID estável da conta;
 /// os dados dos jogos vêm da tabela `games` no Supabase.
 class UserLibraryService implements LibraryService {
   final SupabaseClient _client;
 
   const UserLibraryService(this._client);
 
-  static String storageKeyFor(String userEmail) =>
-      'user_library_${userEmail.trim().toLowerCase()}';
+  static String storageKeyFor(String accountId) =>
+      UserIdentityService.storageKeyFor(accountId);
 
   @override
   Future<List<LibraryEntry>> getLibraryEntries(String userEmail) async {
@@ -152,7 +153,8 @@ class UserLibraryService implements LibraryService {
 
     current.addAll(patch);
 
-    final hasReview = current['user_score'] != null ||
+    final hasReview =
+        current['user_score'] != null ||
         ((current['review_text'] as String?)?.trim().isNotEmpty ?? false);
     final isFavorite = current['is_favorite'] as bool? ?? false;
     final isWishlist = current['is_wishlist'] as bool? ?? false;
@@ -171,7 +173,8 @@ class UserLibraryService implements LibraryService {
     final games = await SupabaseGameService(_client).getGames();
     final game = games.firstWhere(
       (item) => item.id == gameId,
-      orElse: () => throw StateError('Jogo $gameId não encontrado no Supabase.'),
+      orElse: () =>
+          throw StateError('Jogo $gameId não encontrado no Supabase.'),
     );
 
     return LibraryEntry(
@@ -187,7 +190,10 @@ class UserLibraryService implements LibraryService {
 
   Future<List<Map<String, dynamic>>> _readRawEntries(String email) async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(storageKeyFor(email));
+    final accountId = await UserIdentityService().getOrCreateAccountId(
+      legacyEmail: email,
+    );
+    final raw = prefs.getString(storageKeyFor(accountId));
     if (raw == null || raw.isEmpty) return [];
 
     final decoded = jsonDecode(raw);
@@ -204,6 +210,9 @@ class UserLibraryService implements LibraryService {
     List<Map<String, dynamic>> entries,
   ) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(storageKeyFor(email), jsonEncode(entries));
+    final accountId = await UserIdentityService().getOrCreateAccountId(
+      legacyEmail: email,
+    );
+    await prefs.setString(storageKeyFor(accountId), jsonEncode(entries));
   }
 }

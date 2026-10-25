@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import '../services/profile_photo_service.dart';
 
 class AppPageHeader extends StatefulWidget {
   final String title;
@@ -20,25 +22,16 @@ class AppPageHeader extends StatefulWidget {
 }
 
 class _AppPageHeaderState extends State<AppPageHeader> {
-  late Future<String?> _profilePhoto;
-
   @override
   void initState() {
     super.initState();
-    _profilePhoto = _loadProfilePhoto();
-  }
-
-  Future<String?> _loadProfilePhoto() async {
-    final preferences = await SharedPreferences.getInstance();
-    final path = preferences.getString('profileImagePath');
-    if (path == null || !File(path).existsSync()) return null;
-    return path;
+    unawaited(ProfilePhotoService.load());
   }
 
   Future<void> _openProfile() async {
     await widget.onOpenProfile();
     if (!mounted) return;
-    setState(() => _profilePhoto = _loadProfilePhoto());
+    await ProfilePhotoService.load();
   }
 
   @override
@@ -61,29 +54,24 @@ class _AppPageHeaderState extends State<AppPageHeader> {
                 ),
               ),
             ),
-            FutureBuilder<String?>(
-              future: _profilePhoto,
-              builder: (context, snapshot) {
-                final path = snapshot.data;
-                return IconButton(
-                  tooltip: 'Meu perfil',
-                  onPressed: _openProfile,
-                  icon: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: const Color(0xFFEAF2FF),
-                    backgroundImage: path == null
-                        ? null
-                        : FileImage(File(path)),
-                    child: path == null
-                        ? const Icon(
-                            Icons.person_outline,
-                            color: Color(0xFF2457A7),
-                            size: 23,
-                          )
-                        : null,
-                  ),
-                );
-              },
+            ValueListenableBuilder<String?>(
+              valueListenable: ProfilePhotoService.photoPath,
+              builder: (context, path, _) => IconButton(
+                tooltip: 'Meu perfil',
+                onPressed: _openProfile,
+                icon: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: const Color(0xFFEAF2FF),
+                  backgroundImage: path == null ? null : FileImage(File(path)),
+                  child: path == null
+                      ? const Icon(
+                          Icons.person_outline,
+                          color: Color(0xFF2457A7),
+                          size: 23,
+                        )
+                      : null,
+                ),
+              ),
             ),
           ],
         ),

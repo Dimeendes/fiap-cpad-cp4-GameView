@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 
 import '../navigation/app_navigator.dart';
+import '../services/user_identity_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_page_header.dart';
 import '../widgets/custom_text_field.dart';
@@ -47,10 +48,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                     const SizedBox(height: 10),
                     Text(
                       erro!,
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontSize: 13,
-                      ),
+                      style: const TextStyle(color: Colors.red, fontSize: 13),
                     ),
                   ],
                 ],
@@ -69,10 +67,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                       return;
                     }
 
-                    await prefs.setString(
-                      'nome',
-                      nomeController.text.trim(),
-                    );
+                    await prefs.setString('nome', nomeController.text.trim());
 
                     if (!mounted) return;
 
@@ -122,10 +117,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                     const SizedBox(height: 10),
                     Text(
                       erro!,
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontSize: 13,
-                      ),
+                      style: const TextStyle(color: Colors.red, fontSize: 13),
                     ),
                   ],
                 ],
@@ -146,14 +138,16 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                       return;
                     }
 
-                    if (!novoEmail.contains('@') ||
-                        !novoEmail.contains('.')) {
+                    if (!novoEmail.contains('@') || !novoEmail.contains('.')) {
                       setStateDialog(() {
                         erro = 'Digite um e-mail válido.';
                       });
                       return;
                     }
 
+                    await UserIdentityService().getOrCreateAccountId(
+                      legacyEmail: emailSalvo,
+                    );
                     await prefs.setString('email', novoEmail);
 
                     if (!mounted) return;
@@ -247,8 +241,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                         ),
                         onPressed: () {
                           setStateDialog(() {
-                            confirmarSenhaVisivel =
-                                !confirmarSenhaVisivel;
+                            confirmarSenhaVisivel = !confirmarSenhaVisivel;
                           });
                         },
                       ),
@@ -257,10 +250,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                       const SizedBox(height: 10),
                       Text(
                         erro!,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 13,
-                        ),
+                        style: const TextStyle(color: Colors.red, fontSize: 13),
                       ),
                     ],
                   ],
@@ -284,8 +274,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
 
                     if (novaSenhaController.text.length < 6) {
                       setStateDialog(() {
-                        erro =
-                            'A nova senha deve ter pelo menos 6 caracteres.';
+                        erro = 'A nova senha deve ter pelo menos 6 caracteres.';
                       });
                       return;
                     }
@@ -307,10 +296,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                       return;
                     }
 
-                    await prefs.setString(
-                      'senha',
-                      novaSenhaController.text,
-                    );
+                    await prefs.setString('senha', novaSenhaController.text);
 
                     if (!mounted) return;
 
@@ -359,9 +345,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Sair da conta'),
-          content: const Text(
-            'Tem certeza que deseja sair da conta?',
-          ),
+          content: const Text('Tem certeza que deseja sair da conta?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -373,9 +357,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
 
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const LoginScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
                   (route) => false,
                 );
               },
@@ -410,10 +392,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                   color: AppColors.blue.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icone,
-                  color: AppColors.blue,
-                ),
+                child: Icon(icone, color: AppColors.blue),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -439,10 +418,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                   ],
                 ),
               ),
-              const Icon(
-                Icons.chevron_right,
-                color: Color(0xFF999999),
-              ),
+              const Icon(Icons.chevron_right, color: Color(0xFF999999)),
             ],
           ),
         ),
@@ -455,30 +431,20 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
     return Scaffold(
       body: Container(
         width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.gradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.gradient),
         child: SafeArea(
           bottom: false,
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 1100,
-              ),
+              constraints: const BoxConstraints(maxWidth: 1100),
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  24,
-                  24,
-                  24,
-                  32,
-                ),
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
                 children: [
                   AppPageHeader(
                     title: 'Configuração',
                     subtitle:
                         'Gerencie sua conta e suas informações no GameView.',
-                    onOpenProfile: () =>
-                        AppNavigator.openProfile(context),
+                    onOpenProfile: () => AppNavigator.openProfile(context),
                   ),
                   const SizedBox(height: 28),
                   Container(
@@ -531,24 +497,21 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                         opcao(
                           icone: Icons.person_outline,
                           titulo: 'Alterar nome',
-                          subtitulo:
-                              'Atualize seu nome de usuário',
+                          subtitulo: 'Atualize seu nome de usuário',
                           onTap: alterarNome,
                         ),
                         const SizedBox(height: 10),
                         opcao(
                           icone: Icons.email_outlined,
                           titulo: 'Alterar e-mail',
-                          subtitulo:
-                              'Atualize seu e-mail de acesso',
+                          subtitulo: 'Atualize seu e-mail de acesso',
                           onTap: alterarEmail,
                         ),
                         const SizedBox(height: 10),
                         opcao(
                           icone: Icons.lock_outline,
                           titulo: 'Alterar senha',
-                          subtitulo:
-                              'Atualize sua senha de acesso',
+                          subtitulo: 'Atualize sua senha de acesso',
                           onTap: alterarSenha,
                         ),
                         const SizedBox(height: 28),
@@ -564,8 +527,7 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                         opcao(
                           icone: Icons.info_outline,
                           titulo: 'Sobre',
-                          subtitulo:
-                              'Informações sobre o GameView',
+                          subtitulo: 'Informações sobre o GameView',
                           onTap: sobre,
                         ),
                         const SizedBox(height: 24),
@@ -577,12 +539,9 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                             label: const Text('Sair da conta'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.blue,
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 14,
-                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                           ),

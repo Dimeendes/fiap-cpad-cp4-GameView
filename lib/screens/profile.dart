@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/profile_photo_service.dart';
+import '../services/user_identity_service.dart';
 import '../theme/app_colors.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -20,10 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late final Future<SharedPreferences> _preferences =
       SharedPreferences.getInstance();
 
-  Future<String?> _selectProfilePhoto(
-    SharedPreferences preferences,
-    BuildContext dialogContext,
-  ) async {
+  Future<String?> _selectProfilePhoto(BuildContext dialogContext) async {
     try {
       final file = await FilePicker.pickFile(
         dialogTitle: 'Selecionar foto de perfil',
@@ -53,7 +52,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'profile_${DateTime.now().microsecondsSinceEpoch}.$extension',
       );
       await photoFile.writeAsBytes(bytes, flush: true);
-      await preferences.setString(_profileImageKey, photoFile.path);
+      await ProfilePhotoService.save(photoFile.path);
 
       if (!mounted || !dialogContext.mounted) return null;
       return photoFile.path;
@@ -91,10 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   InkWell(
                     onTap: () async {
-                      final selectedPath = await _selectProfilePhoto(
-                        preferences,
-                        context,
-                      );
+                      final selectedPath = await _selectProfilePhoto(context);
                       if (selectedPath != null) {
                         setDialogState(() => photoPath = selectedPath);
                         if (mounted) setState(() {});
@@ -158,6 +154,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
+                    await UserIdentityService().getOrCreateAccountId(
+                      legacyEmail: emailAtual,
+                    );
                     await preferences.setString(
                       'nome',
                       nomeController.text.trim(),
@@ -204,7 +203,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     final preferences = snapshot.data;
                     final name = preferences?.getString('nome') ?? 'Usuário';
                     final email = preferences?.getString('email') ?? '';
-                    final photoPath = preferences?.getString(_profileImageKey);
+                    final photoPath =
+                        ProfilePhotoService.photoPath.value ??
+                        preferences?.getString(_profileImageKey);
                     final hasPhoto =
                         photoPath != null && File(photoPath).existsSync();
 
