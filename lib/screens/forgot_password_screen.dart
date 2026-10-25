@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/user_identity_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
@@ -9,8 +9,7 @@ class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  State<ForgotPasswordScreen> createState() =>
-      _ForgotPasswordScreenState();
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
@@ -34,10 +33,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _isLoading = true;
     });
 
-    final prefs = await SharedPreferences.getInstance();
-
-    final emailSalvo = prefs.getString('email');
     final emailDigitado = _emailController.text.trim();
+    final accountExists = await UserIdentityService().emailExists(
+      emailDigitado,
+    );
 
     if (!mounted) return;
 
@@ -45,34 +44,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _isLoading = false;
     });
 
-    if (emailSalvo == null) {
+    if (!accountExists) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Nenhuma conta cadastrada.',
-          ),
-        ),
-      );
-      return;
-    }
-
-    if (emailDigitado.toLowerCase() != emailSalvo.toLowerCase()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'E-mail não cadastrado.',
-          ),
-        ),
+        const SnackBar(content: Text('Nenhuma conta cadastrada.')),
       );
       return;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Solicitação de recuperação realizada!',
-        ),
-      ),
+      const SnackBar(content: Text('Solicitação de recuperação realizada!')),
     );
 
     Future.delayed(const Duration(milliseconds: 1200), () {
@@ -88,17 +68,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.gradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.gradient),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(25),
               child: Container(
-                constraints: const BoxConstraints(
-                  maxWidth: 420,
-                ),
+                constraints: const BoxConstraints(maxWidth: 420),
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -160,9 +136,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
                       const Text(
                         'E-mail',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
 
                       const SizedBox(height: 8),
@@ -173,13 +147,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
                         validator: (value) {
-                          if (value == null ||
-                              value.trim().isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return 'Digite seu e-mail';
                           }
 
-                          if (!value.contains('@') ||
-                              !value.contains('.')) {
+                          if (!value.contains('@') || !value.contains('.')) {
                             return 'Digite um e-mail válido';
                           }
 
@@ -190,11 +162,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       const SizedBox(height: 28),
 
                       CustomButton(
-                        text: _isLoading
-                            ? 'VERIFICANDO...'
-                            : 'RECUPERAR SENHA',
-                        onPressed:
-                            _isLoading ? () {} : _recuperarSenha,
+                        text: _isLoading ? 'VERIFICANDO...' : 'RECUPERAR SENHA',
+                        onPressed: _isLoading ? () {} : _recuperarSenha,
                       ),
 
                       const SizedBox(height: 15),

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import '../theme/app_colors.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
+import '../services/profile_photo_service.dart';
+import '../services/user_identity_service.dart';
 import 'forgot_password_screen.dart';
 import 'main_shell.dart';
 import 'register_screen.dart';
@@ -39,13 +41,13 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    final prefs = await SharedPreferences.getInstance();
-
-    final emailSalvo = prefs.getString('email');
-    final senhaSalva = prefs.getString('senha');
-
     final emailDigitado = _emailController.text.trim();
     final senhaDigitada = _passwordController.text;
+    final identity = UserIdentityService();
+    final accountExists = await identity.emailExists(emailDigitado);
+    final loggedIn =
+        accountExists &&
+        await identity.login(email: emailDigitado, password: senhaDigitada);
 
     if (!mounted) return;
 
@@ -53,8 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = false;
     });
 
-    // Verifica se existe uma conta cadastrada
-    if (emailSalvo == null || senhaSalva == null) {
+    if (!accountExists) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Nenhuma conta cadastrada. Crie uma conta primeiro.'),
@@ -63,22 +64,14 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // Verifica o e-mail
-    if (emailDigitado != emailSalvo) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('E-mail não cadastrado.')));
-      return;
-    }
-
-    // Verifica a senha
-    if (senhaDigitada != senhaSalva) {
+    if (!loggedIn) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Senha incorreta.')));
       return;
     }
 
-    // Login realizado
+    await ProfilePhotoService.load();
+
     if (!mounted) return;
     Navigator.pushReplacement(
       context,

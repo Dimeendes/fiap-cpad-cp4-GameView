@@ -90,4 +90,111 @@ void main() {
 
     expect(secondId, isNot(firstId));
   });
+
+  test(
+    'registers multiple accounts and switches their stable IDs on login',
+    () async {
+      final identity = UserIdentityService();
+      expect(
+        await identity.registerAccount(
+          name: 'Player One',
+          email: 'one@example.com',
+          password: 'password-one',
+        ),
+        isTrue,
+      );
+      final preferences = await SharedPreferences.getInstance();
+      final firstId = preferences.getString(
+        UserIdentityService.accountIdPreferenceKey,
+      );
+
+      expect(
+        await identity.registerAccount(
+          name: 'Player Two',
+          email: 'two@example.com',
+          password: 'password-two',
+        ),
+        isTrue,
+      );
+      final secondId = preferences.getString(
+        UserIdentityService.accountIdPreferenceKey,
+      );
+      expect(secondId, isNot(firstId));
+
+      expect(
+        await identity.login(
+          email: 'one@example.com',
+          password: 'password-one',
+        ),
+        isTrue,
+      );
+      expect(
+        preferences.getString(UserIdentityService.accountIdPreferenceKey),
+        firstId,
+      );
+      expect(preferences.getString('nome'), 'Player One');
+      expect(
+        await identity.login(
+          email: 'two@example.com',
+          password: 'wrong-password',
+        ),
+        isFalse,
+      );
+      expect(
+        preferences.getString(UserIdentityService.accountIdPreferenceKey),
+        firstId,
+      );
+    },
+  );
+
+  test('rejects duplicate email addresses case-insensitively', () async {
+    final identity = UserIdentityService();
+    expect(
+      await identity.registerAccount(
+        name: 'Player',
+        email: 'player@example.com',
+        password: 'password',
+      ),
+      isTrue,
+    );
+    expect(
+      await identity.registerAccount(
+        name: 'Another Player',
+        email: 'PLAYER@example.com',
+        password: 'another-password',
+      ),
+      isFalse,
+    );
+  });
+
+  test('updates active account details without changing its ID', () async {
+    final identity = UserIdentityService();
+    await identity.registerAccount(
+      name: 'Player',
+      email: 'player@example.com',
+      password: 'password',
+    );
+    final preferences = await SharedPreferences.getInstance();
+    final accountId = preferences.getString(
+      UserIdentityService.accountIdPreferenceKey,
+    );
+
+    await identity.updateActiveAccount(
+      name: 'Updated Player',
+      email: 'updated@example.com',
+      password: 'new-password',
+    );
+
+    expect(
+      preferences.getString(UserIdentityService.accountIdPreferenceKey),
+      accountId,
+    );
+    expect(
+      await identity.login(
+        email: 'updated@example.com',
+        password: 'new-password',
+      ),
+      isTrue,
+    );
+  });
 }

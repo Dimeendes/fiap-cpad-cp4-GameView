@@ -29,10 +29,16 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  static const _profileImageKey = 'profileImagePath';
-
   late final Future<SharedPreferences> _preferences =
       SharedPreferences.getInstance();
+
+  @override
+  void initState() {
+    super.initState();
+    ProfilePhotoService.load().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
 
   Future<String?> _selectProfilePhoto(BuildContext dialogContext) async {
     try {
@@ -83,12 +89,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String nomeAtual,
     String emailAtual,
   ) async {
-    final preferences = await _preferences;
+    await ProfilePhotoService.load();
     if (!mounted || !context.mounted) return;
 
     final nomeController = TextEditingController(text: nomeAtual);
     final emailController = TextEditingController(text: emailAtual);
-    var photoPath = preferences.getString(_profileImageKey);
+    var photoPath = ProfilePhotoService.photoPath.value;
 
     await showDialog(
       context: context,
@@ -166,18 +172,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    await UserIdentityService().getOrCreateAccountId(
-                      legacyEmail: emailAtual,
-                    );
-                    await preferences.setString(
-                      'nome',
-                      nomeController.text.trim(),
-                    );
-
-                    await preferences.setString(
-                      'email',
-                      emailController.text.trim(),
-                    );
+                    try {
+                      await UserIdentityService().updateActiveAccount(
+                        name: nomeController.text.trim(),
+                        email: emailController.text.trim(),
+                      );
+                    } on StateError catch (error) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text(error.message)));
+                      }
+                      return;
+                    }
 
                     if (context.mounted) {
                       Navigator.pop(context);
@@ -215,9 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     final preferences = snapshot.data;
                     final name = preferences?.getString('nome') ?? 'Usuário';
                     final email = preferences?.getString('email') ?? '';
-                    final photoPath =
-                        ProfilePhotoService.photoPath.value ??
-                        preferences?.getString(_profileImageKey);
+                    final photoPath = ProfilePhotoService.photoPath.value;
                     final hasPhoto =
                         photoPath != null && File(photoPath).existsSync();
 
@@ -350,9 +355,8 @@ class _ProfileActivityState extends State<_ProfileActivity> {
       if (SupabaseConfig.isConfigured) {
         final client = Supabase.instance.client;
         games = await SupabaseGameService(client).getGames();
-        entries = await UserLibraryService(client).getLibraryEntries(
-          widget.email,
-        );
+        entries = await UserLibraryService(client)
+            .getLibraryEntries(widget.email);
       }
       if (!mounted) return;
       setState(() {
@@ -409,7 +413,9 @@ class _ProfileActivityState extends State<_ProfileActivity> {
       );
     }
 
-    final reviewed = _entries.where((entry) => entry.userScore != null).toList();
+    final reviewed = _entries
+        .where((entry) => entry.userScore != null)
+        .toList();
     final diary = _entries.where((entry) => entry.hasReview).toList()
       ..sort(
         (a, b) => (b.loggedAtMillis ?? 0).compareTo(a.loggedAtMillis ?? 0),
@@ -483,10 +489,8 @@ class _ProfileSectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-      ),
+      style: Theme.of(context).textTheme.titleMedium
+          ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
     );
   }
 }

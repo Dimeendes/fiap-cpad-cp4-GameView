@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/app_colors.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
+import '../services/profile_photo_service.dart';
 import '../services/user_identity_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -43,19 +43,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _isLoading = true;
     });
 
-    final prefs = await SharedPreferences.getInstance();
-
     final nome = _nameController.text.trim();
     final email = _emailController.text.trim();
     final senha = _passwordController.text;
 
-    // Verifica se já existe uma conta com esse e-mail.
-    final emailExistente = prefs.getString('email');
+    final registered = await UserIdentityService().registerAccount(
+      name: nome,
+      email: email,
+      password: senha,
+    );
 
     if (!mounted) return;
 
-    if (emailExistente != null &&
-        emailExistente.toLowerCase() == email.toLowerCase()) {
+    if (!registered) {
       setState(() {
         _isLoading = false;
       });
@@ -67,11 +67,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    // Salva os dados da conta.
-    await UserIdentityService().createAccountId();
-    await prefs.setString('nome', nome);
-    await prefs.setString('email', email);
-    await prefs.setString('senha', senha);
+    await ProfilePhotoService.load();
 
     if (!mounted) return;
 

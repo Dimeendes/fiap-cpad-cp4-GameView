@@ -36,26 +36,21 @@ O app utiliza um tom de voz descontraído e próximo da comunidade gamer, com um
 4. Biblioteca para visualizar seus jogos avaliados e adicionar jogos para "Jogar depois"
 5. Personalização de perfil
 
-O cadastro e a biblioteca são armazenados localmente no dispositivo. A biblioteca é associada a um ID estável criado para a conta, então alterar o e-mail não a desvincula; os dados não são sincronizados entre dispositivos.
+O app permite cadastrar mais de uma conta neste dispositivo. Contas, senhas e biblioteca são armazenadas localmente; cada biblioteca e foto de perfil usa um ID estável próprio, então alterar o e-mail não desvincula os dados. Essas informações não são sincronizadas entre dispositivos.
 
-### Preparar o projeto
+### Rodar o projeto
 
-O catálogo busca os jogos na tabela `public.games` do Supabase. Antes de executar o app:
+`flutter run -d windows --dart-define="SUPABASE_URL=https://<project-ref>.supabase.co" --dart-define="SUPABASE_ANON_KEY=<sua-chave-publica>"`
 
-1. Crie um projeto no Supabase.
-2. No painel do projeto, abra **SQL Editor** e execute todo o script [`supabase/schema.sql`](./supabase/schema.sql). Ele cria a tabela, configura a leitura pública, adiciona a coluna `description` e insere os jogos iniciais. Se a tabela já existia, execute o script novamente para adicionar a coluna.
-3. Copie o **Project URL** e a chave pública **anon** (ou **publishable**) nas configurações de API do projeto. Não use a chave `service_role` no app.
-4. No PowerShell, na pasta do projeto, execute o comando abaixo substituindo os exemplos pelos valores do seu projeto:
+### Público alvo
 
-```powershell
-flutter run -d windows `
-  --dart-define="SUPABASE_URL=https://<project-ref>.supabase.co" `
-  --dart-define="SUPABASE_ANON_KEY=<sua-chave-publica>"
-```
+Jogadores: Atualmente jogos são muito caros, com a plataforma você pode acompanhar as médias de notas do jogos para decidir se compensa comprar o jogo ou não além de catálogar os seus próprios.
 
-`SEU_URL` e `SUA_CHAVE_PUBLICA` são marcadores de exemplo, não valores funcionais. Se o catálogo exibir **“Não foi possível carregar os jogos do Supabase”**, confira a mensagem de erro exibida abaixo do aviso; ela ajuda a identificar se a tabela ainda não foi criada ou se as credenciais estão incorretas.
+Desenvolvedores: Ler feedbacks da comunidade sobre quais pontos ainda podem ser melhorados no jogo desenvolvido e receber até idéias de possíveis atualizações.
 
-Preencha a coluna `description` dos jogos em `public.games` pelo **Table Editor** ou pelo **SQL Editor**. O modal de avaliação exibe essa descrição e a imagem cadastrada em `image_url`.
+### Modelo de negócio
+
+Para monetizar o app pensamos em parcerias e afiliados com lojas de jogos para ganharmos uma comissão por uma compra feita por um link de um jogo do nosso app.
 
 ### Telas do APP
 <table>
@@ -84,5 +79,4 @@ Preencha a coluna `description` dos jogos em `public.games` pelo **Table Editor*
     </td>
   </tr>
 </table>
-
 

@@ -67,7 +67,9 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                       return;
                     }
 
-                    await prefs.setString('nome', nomeController.text.trim());
+                    await UserIdentityService().updateActiveAccount(
+                      name: nomeController.text.trim(),
+                    );
 
                     if (!mounted) return;
 
@@ -145,10 +147,14 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                       return;
                     }
 
-                    await UserIdentityService().getOrCreateAccountId(
-                      legacyEmail: emailSalvo,
-                    );
-                    await prefs.setString('email', novoEmail);
+                    try {
+                      await UserIdentityService().updateActiveAccount(
+                        email: novoEmail,
+                      );
+                    } on StateError catch (error) {
+                      setStateDialog(() => erro = error.message);
+                      return;
+                    }
 
                     if (!mounted) return;
 
@@ -296,7 +302,9 @@ class _ConfigsScreenState extends State<ConfigsScreen> {
                       return;
                     }
 
-                    await prefs.setString('senha', novaSenhaController.text);
+                    await UserIdentityService().updateActiveAccount(
+                      password: novaSenhaController.text,
+                    );
 
                     if (!mounted) return;
 
